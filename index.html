@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Власть над временем — Козырев · Калагия · Наумкин</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: radial-gradient(ellipse at center, #0a0a1e 0%, #000 80%);
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Звёздное небо */
+        #stars-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 20px;
+            color: #00ffff;
+            text-shadow: 3px 3px 0 #000, 0 0 30px #00ffff, 0 0 60px #0088ff;
+            margin-bottom: 10px;
+            text-align: center;
+            animation: glow 2s infinite alternate;
+            line-height: 1.6;
+            z-index: 2;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 3px 3px 0 #000, 0 0 20px #00ffff; }
+            to { text-shadow: 3px 3px 0 #000, 0 0 40px #00ffff, 0 0 80px #ff00ff; }
+        }
+
+        .subtitle {
+            font-size: 8px;
+            color: #ff69b4;
+            text-shadow: 0 0 15px #ff69b4;
+            margin-bottom: 25px;
+            text-align: center;
+            line-height: 2;
+            z-index: 2;
+        }
+
+        .warning {
+            background: rgba(155, 89, 182, 0.15);
+            border: 2px solid #9b59b6;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 7px;
+            color: #d7bde2;
+            text-align: center;
+            line-height: 2;
+            max-width: 800px;
+            z-index: 2;
+        }
+
+        .container {
+            max-width: 950px;
+            width: 100%;
+            z-index: 2;
+        }
+
+        /* Машина времени */
+        .time-machine {
+            background: linear-gradient(180deg, #0a0a2e 0%, #050518 100%);
+            border: 4px solid #00ffff;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 60px rgba(0, 255, 255, 0.5);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .time-machine::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 2px,
+                rgba(0, 255, 255, 0.05) 2px, rgba(0, 255, 255, 0.05) 4px
+            );
+            pointer-events: none;
+        }
+
+        .year-display {
+            font-size: 55px;
+            color: #00ffff;
+            text-shadow: 0 0 30px #00ffff, 0 0 60px #0088ff;
+            margin: 15px 0;
+            letter-spacing: 5px;
+            animation: yearPulse 1s infinite alternate;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes yearPulse {
+            from { text-shadow: 0 0 20px #00ffff; }
+            to { text-shadow: 0 0 40px #00ffff, 0 0 80px #0088ff; }
+        }
+
+        .year-display.future { color: #f1c40f; text-shadow: 0 0 30px #f1c40f, 0 0 60px #f39c12; }
+        .year-display.past { color: #ff69b4; text-shadow: 0 0 30px #ff69b4, 0 0 60px #9b59b6; }
+        .year-display.stopped { color: #e74c3c; text-shadow: 0 0 40px #e74c3c, 0 0 80px #c0392b; animation: stopBlink 0.3s infinite; }
+
+        @keyframes stopBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .date-label {
+            font-size: 9px;
+            color: #aaa;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Кнопки времени */
+        .time-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00ffff 0%, #0088ff 100%);
+            color: #000;
+            border: 2px solid #fff;
+            padding: 12px 18px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .btn:hover { transform: scale(1.06); box-shadow: 0 0 25px rgba(0, 255, 255, 0.9); }
+        .btn:active { transform: scale(0.95); }
+
+        .btn-past { background: linear-gradient(135deg, #ff69b4 0%, #9b59b6 100%); color: #fff; }
+        .btn-future { background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%); color: #000; }
+        .btn-stop { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: #fff; }
+        .btn-gold { background: linear-gradient(135deg, #f1c40f 0%, #d4a800 100%); color: #000; }
+
+        /* Ввод года */
+        .year-input {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .year-input input {
+            background: #000;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            padding: 12px 15px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px;
+            width: 140px;
+            text-align: center;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .year-input input:focus { box-shadow: 0 0 20px #00ffff; }
+
+        /* Капсулы */
+        .capsules-section {
+            background: linear-gradient(180deg, #1a0a2e 0%, #0d0518 100%);
+            border: 3px solid #9b59b6;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 35px rgba(155, 89, 182, 0.5);
+        }
+
+        .capsules-title {
+            font-size: 11px;
+            color: #9b59b6;
+            text-shadow: 0 0 15px #9b59b6;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .capsules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .capsule {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #9b59b6;
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .capsule:hover {
+            border-color: #f1c40f;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(155, 89, 182, 0.6);
+        }
+
+        .capsule.opened {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .capsule-icon {
+            font-size: 32px;
+            margin-bottom: 6px;
+            filter: drop-shadow(0 0 10px #9b59b6);
+        }
+
+        .capsule-name {
+            font-size: 7px;
+            color: #d7bde2;
+            margin-bottom: 4px;
+            line-height: 1.5;
+        }
+
+        .capsule-years {
+            font-size: 6px;
+            color: #f1c40f;
+            margin-bottom: 8px;
+        }
+
+        .capsule-btn {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 6px 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 6px;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .capsule-btn:hover { background: #a569bd; }
+
+        /* Компьютер Бога */
+        .god-computer {
+            background: linear-gradient(180deg, #000 0%, #0a0a2e 100%);
+            border: 4px solid #f1c40f;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(241, 196, 15, 0.6);
+        }
+
+        .god-title {
+            font-size: 12px;
+            color: #f1c40f;
+            text-shadow: 0 0 20px #f1c40f;
+            margin-bottom: 15px;
+        }
+
+        .god-screen {
+            background: #000;
+            border: 3px solid #f1c40f;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            color: #f1c40f;
+            text-align: left;
+            line-height: 2;
+            min-height: 120px;
+            margin-bottom: 15px;
+            box-shadow: inset 0 0 30px rgba(241, 196, 15, 0.3);
+        }
+
+        .god-screen .line { margin-bottom: 4px; }
+        .god-screen .star { color: #00ffff; }
+        .god-screen .result { color: #2ecc71; font-weight: bold; }
+        .god-screen .warn { color: #e74c3c; }
+
+        /* Подарок Будды */
+        .buddha-gift {
+            background: linear-gradient(135deg, #ffd700 0%, #ff69b4 50%, #9b59b6 100%);
+            border: 4px solid #fff;
+            border-radius: 20px;
+            padding: 30px 25px;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+            margin-bottom: 20px;
+            animation: giftPulse 3s infinite alternate;
+        }
+
+        @keyframes giftPulse {
+            from { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
+            to { box-shadow: 0 0 80px rgba(255, 105, 180, 1); }
+        }
+
+        .buddha-icon {
+            font-size: 70px;
+            margin-bottom: 15px;
+            animation: buddhaFloat 3s infinite ease-in-out;
+            filter: drop-shadow(0 0 25px #fff);
+        }
+
+        @keyframes buddhaFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.05); }
+        }
+
+        .buddha-title {
+            font-size: 14px;
+            color: #000;
+            text-shadow: 2px 2px 0 #fff;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .buddha-text {
+            font-size: 9px;
+            color: #000;
+            line-height: 2.2;
+            background: rgba(255, 255, 255, 0.4);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .buddha-text strong {
+            color: #7a0032;
+            text-shadow: 1px 1px 0 #fff;
+        }
+
+        .buddha-name {
+            font-size: 12px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #7a0032, 0 0 15px #fff;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        /* Связь всех звёзд */
+        .stars-link {
+            background: linear-gradient(135deg, #000 0%, #1a0a3e 100%);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+        }
+
+        .stars-link-title {
+            font-size: 11px;
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+            margin-bottom: 15px;
+        }
+
+        .stars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .star-item {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            padding: 10px 5px;
+            text-align: center;
+            font-size: 7px;
+            color: #00ffff;
+            transition: all 0.3s;
+        }
+
+        .star-item.connected {
+            border-color: #2ecc71;
+            color: #2ecc71;
+            box-shadow: 0 0 20px rgba(46, 204, 113, 0.6);
+        }
+
+        .star-item .star-icon { font-size: 20px; margin-bottom: 5px; }
+
+        /* Лог */
+        .log {
+            background: #000;
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 7px;
+            color: #00ffff;
+            max-height: 180px;
+            overflow-y: auto;
+            line-height: 2;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+        }
+
+        .log-entry { margin-bottom: 3px; }
+        .log-info { color: #00ffff; }
+        .log-success { color: #2ecc71; }
+        .log-warn { color: #f1c40f; }
+        .log-error { color: #e74c3c; }
+        .log-mystic { color: #ff69b4; text-shadow: 0 0 8px #ff69b4; }
+
+        .footer {
+            font-size: 7px;
+            color: #444;
+            text-align: center;
+            line-height: 2;
+            margin-top: 20px;
+            max-width: 800px;
+            z-index: 2;
+        }
+
+        @media (max-width: 700px) {
+            h1 { font-size: 13px; }
+            .year-display { font-size: 36px; }
+            .btn { font-size: 6px; padding: 9px 12px; }
+            .buddha-title { font-size: 10px; }
+            .buddha-name { font-size: 9px; }
+            .capsules-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="stars-canvas"></canvas>
+
+    <h1>⏳ ВЛАСТЬ НАД ВРЕМЕНЕМ ⏳</h1>
+    <div class="subtitle">
+        ✦ Козырев · Калагия · Наумкин · Капсулы времени ✦<br>
+        Компьютер Бога · Связь всех звёзд
+    </div>
+
+    <div class="warning">
+        ⚠️ <strong>НАУЧНАЯ ФАНТАСТИКА!</strong> ⚠️<br>
+        Все эффекты — вымышленные. Вдохновлено идеями Н.А. Козырева,<br>
+        концепцией «Калагия» и работами А. Наумкина о времени.
+    </div>
+
+    <div class="container">
+
+        <!-- МАШИНА ВРЕМЕНИ -->
+        <div class="time-machine">
+            <div style="font-size: 10px; color: #00ffff; text-shadow: 0 0 15px #00ffff; margin-bottom: 5px;">МАШИНА ВРЕМЕНИ</div>
+            <div class="date-label" id="dateLabel">УСТАНОВЛЕН ГОД:</div>
+            <div class="year-display" id="yearDisplay">2026</div>
+
+            <div class="year-input">
+                <input type="number" id="yearInput" placeholder="ГОД" min="1" max="9999" value="2026">
+                <button class="btn btn-gold" onclick="setYear()">УСТАНОВИТЬ</button>
+            </div>
+
+            <div class="time-buttons">
+                <button class="btn btn-past" onclick="timeTravel('past')">⏪ В ПРОШЛОЕ</button>
+                <button class="btn btn-stop" onclick="toggleStop()">⏸ ОСТАНОВИТЬ ВРЕМЯ</button>
+                <button class="btn btn-future" onclick="timeTravel('future')">⏩ В БУДУЩЕЕ</button>
+            </div>
+        </div>
+
+        <!-- КАПСУЛЫ КОЗЫРЕВА -->
+        <div class="capsules-section">
+            <div class="capsules-title">🔮 КАПСУЛЫ ВРЕМЕНИ (10 ШТУК · ПО 1000 ЛЕТ)</div>
+            <div class="capsules-grid" id="capsulesGrid"></div>
+        </div>
+
+        <!-- КОМПЬЮТЕР БОГА -->
+        <div class="god-computer">
+            <div class="god-title">⚡ КОМПЬЮТЕР БОГА ⚡</div>
+            <div class="god-screen" id="godScreen">
+                <div class="line">[GOD-OS] Загрузка вселенского ядра...</div>
+                <div class="line">[GOD-OS] Синхронизация с временем...</div>
+                <div class="line warn">[!] Ожидание команды оператора</div>
+            </div>
+            <div class="time-buttons">
+                <button class="btn btn-gold" onclick="godCalculate()">🔮 ВЫЧИСЛИТЬ СУДЬБУ</button>
+                <button class="btn" onclick="godReset()">🔄 ПЕРЕЗАГРУЗКА</button>
+            </div>
+        </div>
+
+        <!-- СВЯЗЬ ВСЕХ ЗВЁЗД -->
+        <div class="stars-link">
+            <div class="stars-link-title">🌟 СВЯЗЬ ВСЕХ ЗВЁЗД 🌟</div>
+            <div class="stars-grid" id="starsGrid"></div>
+            <button class="btn" onclick="connectAllStars()">✨ СВЯЗАТЬ ВСЕ ЗВЁЗДЫ</button>
+        </div>
+
+        <!-- ПОДАРОК БУДДЫ -->
+        <div class="buddha-gift">
+            <div class="buddha-icon">🪷</div>
+            <div class="buddha-title">ПОДАРОК БУДДЫ</div>
+            <div class="buddha-text">
+                <em>Материи Татьяне</em><br>
+                <strong>С Италии — с любовью,</strong><br>
+                <strong>драгоценной ученицы</strong><br><br>
+                🕉️ Пусть свет Будды освещает твой путь<br>
+                через все времена и пространства.<br>
+                Время — это иллюзия. Только любовь вечна. 🕉️
+            </div>
+            <div class="buddha-name">✦ ТАТЬЯНА ✦</div>
+            <div class="buddha-text" style="font-size: 7px;">
+                Послание из Италии · 2026 год<br>
+                <em>«Всё, что было, есть и будет — уже здесь. В твоём сердце».</em>
+            </div>
+        </div>
+
+        <!-- ЛОГ -->
+        <div class="log" id="log">
+            <div class="log-entry log-info">[SYS] Власть над временем инициализирована</div>
+            <div class="log-entry log-mystic">[TIME] Капсулы Козырева готовы к открытию</div>
+            <div class="log-entry log-warn">[SYS] 10 капсул по 1000 лет ожидают</div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        ⏳ Власть над временем · Козырев · Калагия · Наумкин<br>
+        Научно-фантастический симулятор. Все эффекты вымышленные.<br>
+        ✦ Подарок для Татьяны с любовью из Италии ✦
+    </div>
+
+<script>
+    // === ЗВЁЗДНОЕ НЕБО ===
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+
+    function initStars() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        stars = [];
+        for (let i = 0; i < 200; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2 + 0.5,
+                speed: Math.random() * 0.02 + 0.005,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    let time = 0;
+    function drawStars() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        stars.forEach(s => {
+            const twinkle = Math.sin(time * s.speed + s.phase) * 0.5 + 0.5;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * twinkle, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + twinkle * 0.7})`;
+            ctx.fill();
+        });
+
+        time += 1;
+        requestAnimationFrame(drawStars);
+    }
+
+    initStars();
+    drawStars();
+    window.addEventListener('resize', initStars);
+
+    // === СОСТОЯНИЕ ===
+    let currentYear = 2026;
+    let isStopped = false;
+    let openedCapsules = 0;
+    let connectedStars = 0;
+    let godCalculations = 0;
+
+    const yearDisplay = document.getElementById('yearDisplay');
+    const dateLabel = document.getElementById('dateLabel');
+    const yearInput = document.getElementById('yearInput');
+    const logEl = document.getElementById('log');
+    const godScreen = document.getElementById('godScreen');
+    const capsulesGrid = document.getElementById('capsulesGrid');
+    const starsGrid = document.getElementById('starsGrid');
+
+    // === КАПСУЛЫ КОЗЫРЕВА (10 × 1000 лет) ===
+    const capsules = [
+        { id: 1, year: 2026, icon: '🕰️', name: 'Настоящее' },
+        { id: 2, year: 3026, icon: '🔮', name: 'Будущее +1000' },
+        { id: 3, year: 4026, icon: '🌟', name: 'Будущее +2000' },
+        { id: 4, year: 5026, icon: '💫', name: 'Будущее +3000' },
+        { id: 5, year: 1026, icon: '📜', name: 'Прошлое -1000' },
+        { id: 6, year: 26, icon: '🏛️', name: 'Прошлое -2000' },
+        { id: 7, year: 6026, icon: '🚀', name: 'Будущее +4000' },
+        { id: 8, year: 7026, icon: '🌌', name: 'Будущее +5000' },
+        { id: 9, year: 8026, icon: '✨', name: 'Будущее +6000' },
+        { id: 10, year: 9026, icon: '👁️', name: 'Будущее +7000' }
+    ];
+
+    // === ЗВЁЗДЫ (связь) ===
+    const starNames = ['Сириус', 'Полярная', 'Вега', 'Орион', 'Альдебаран', 'Антарес', 'Плеяды', 'Кассиопея', 'Лира', 'Лебедь'];
+
+    // === ИНИЦИАЛИЗАЦИЯ КАПСУЛ ===
+    function renderCapsules() {
+        capsulesGrid.innerHTML = '';
+        capsules.forEach(c => {
+            const opened = c.id <= openedCapsules;
+            const div = document.createElement('div');
+            div.className = 'capsule' + (opened ? ' opened' : '');
+            div.innerHTML = `
+                <div class="capsule-icon">${opened ? '✅' : c.icon}</div>
+                <div class="capsule-name">${c.name}</div>
+                <div class="capsule-years">${c.year} год</div>
+                <button class="capsule-btn" onclick="openCapsule(${c.id})" ${opened ? 'disabled' : ''}>
+                    ${opened ? 'ОТКРЫТА' : 'ОТКРЫТЬ'}
+                </button>
+            `;
+            capsulesGrid.appendChild(div);
+        });
+    }
+
+    function openCapsule(id) {
+        const capsule = capsules.find(c => c.id === id);
+        if (!capsule || id <= openedCapsules) return;
+
+        if (id !== openedCapsules + 1) {
+            addLog(`🔮 Сначала открой капсулу #${openedCapsules + 1}`, 'log-warn');
+            return;
+        }
+
+        openedCapsules++;
+        renderCapsules();
+
+        currentYear = capsule.year;
+        yearDisplay.textContent = capsule.year;
+        yearDisplay.className = 'year-display future';
+
+        addLog(`🔮 КАПСУЛА ОТКРЫТА: ${capsule.name} (${capsule.year} год)`, 'log-mystic');
+        addLog(`   ⏳ Перемещение во времени: ${capsule.year}`, 'log-success');
+
+        createTimeEffect();
+    }
+
+    // === МАШИНА ВРЕМЕНИ ===
+    function timeTravel(direction) {
+        if (isStopped) {
+            addLog('⏸ Время остановлено! Нажми «ОСТАНОВИТЬ ВРЕМЯ» для возобновления.', 'log-error');
+            return;
+        }
+
+        const jump = Math.floor(Math.random() * 500) + 100;
+
+        if (direction === 'future') {
+            currentYear += jump;
+            yearDisplay.className = 'year-display future';
+            addLog(`⏩ ПРЫЖОК В БУДУЩЕЕ: +${jump} лет → ${currentYear} год`, 'log-success');
+        } else {
+            currentYear = Math.max(1, currentYear - jump);
+            yearDisplay.className = 'year-display past';
+            addLog(`⏪ ПРЫЖОК В ПРОШЛОЕ: -${jump} лет → ${currentYear} год`, 'log-mystic');
+        }
+
+        yearDisplay.textContent = currentYear;
+        createTimeEffect();
+    }
+
+    function setYear() {
+        const year = parseInt(yearInput.value);
+        if (isNaN(year) || year < 1 || year > 9999) {
+            addLog('❌ Введи год от 1 до 9999', 'log-error');
+            return;
+        }
+
+        const diff = year - currentYear;
+        currentYear = year;
+
+        if (diff > 0) {
+            yearDisplay.className = 'year-display future';
+            addLog(`⚡ ПЕРЕМЕЩЕНИЕ: +${diff} лет → ${year} год`, 'log-success');
+        } else if (diff < 0) {
+            yearDisplay.className = 'year-display past';
+            addLog(`⚡ ПЕРЕМЕЩЕНИЕ: ${diff} лет → ${year} год`, 'log-mystic');
+        } else {
+            addLog(`⚡ Ты уже в ${year} году`, 'log-info');
+        }
+
+        yearDisplay.textContent = currentYear;
+        createTimeEffect();
+    }
+
+    function toggleStop() {
+        isStopped = !isStopped;
+
+        if (isStopped) {
+            yearDisplay.className = 'year-display stopped';
+            dateLabel.textContent = '⏸ ВРЕМЯ ОСТАНОВЛЕНО:';
+            addLog('⏸ ВРЕМЯ ОСТАНОВЛЕНО! Вселенная замерла.', 'log-error');
+        } else {
+            yearDisplay.className = 'year-display';
+            dateLabel.textContent = 'УСТАНОВЛЕН ГОД:';
+            addLog('▶ ВРЕМЯ ВОЗОБНОВЛЕНО. Вселенная ожила.', 'log-success');
+        }
+    }
+
+    // === КОМПЬЮТЕР БОГА ===
+    function godCalculate() {
+        godCalculations++;
+        const year = currentYear;
+
+        godScreen.innerHTML = '<div class="line">[GOD-OS] Запрос к вселенскому ядру...</div>';
+
+        const steps = [
+            'Сканирование временных линий...',
+            'Анализ вероятностей...',
+            'Связь со звёздами...',
+            'Расчёт судьбы...',
+            'Готово!'
+        ];
+
+        steps.forEach((step, i) => {
+            setTimeout(() => {
+                const div = document.createElement('div');
+                div.className = 'line';
+                div.innerHTML = `<span class="star">★</span> ${step}`;
+                godScreen.appendChild(div);
+
+                if (i === steps.length - 1) {
+                    const results = [
+                        `Твоё будущее в ${year} году: свет и гармония`,
+                        `В ${year} году тебя ждёт великое открытие`,
+                        `Судьба в ${year}: путь к истине`,
+                        `${year} год: встреча, которая изменит всё`,
+                        `В ${year} году звёзды благоволят тебе`
+                    ];
+
+                    const div2 = document.createElement('div');
+                    div2.className = 'line result';
+                    div2.textContent = `✨ ${results[Math.floor(Math.random() * results.length)]}`;
+                    godScreen.appendChild(div2);
+
+                    addLog(`⚡ Компьютер Бога: расчёт #${godCalculations} завершён`, 'log-mystic');
+                }
+            }, i * 400);
+        });
+    }
+
+    function godReset() {
+        godScreen.innerHTML = `
+            <div class="line">[GOD-OS] Перезагрузка...</div>
+            <div class="line">[GOD-OS] Синхронизация с временем...</div>
+            <div class="line warn">[!] Ожидание команды оператора</div>
+        `;
+        addLog('🔄 Компьютер Бога перезагружен', 'log-info');
+    }
+
+    // === СВЯЗЬ ЗВЁЗД ===
+    function renderStars() {
+        starsGrid.innerHTML = '';
+        starNames.forEach((name, i) => {
+            const connected = i < connectedStars;
+            const div = document.createElement('div');
+            div.className = 'star-item' + (connected ? ' connected' : '');
+            div.innerHTML = `
+                <div class="star-icon">${connected ? '🌟' : '⭐'}</div>
+                <div>${name}</div>
+            `;
+            starsGrid.appendChild(div);
+        });
+    }
+
+    function connectAllStars() {
+        if (connectedStars >= starNames.length) {
+            addLog('🌟 Все звёзды уже связаны!', 'log-warn');
+            return;
+        }
+
+        const toConnect = Math.min(starNames.length, connectedStars + 3);
+        const prev = connectedStars;
+        connectedStars = toConnect;
+        renderStars();
+
+        addLog(`🌟 СВЯЗАНО ЗВЁЗД: ${prev} → ${connectedStars}`, 'log-success');
+
+        if (connectedStars >= starNames.length) {
+            addLog('✨ ВСЕ ЗВЁЗДЫ СВЯЗАНЫ! Вселенная едина!', 'log-mystic');
+            createStarEffect();
+        }
+    }
+
+    // === ЭФФЕКТЫ ===
+    function createTimeEffect() {
+        const colors = ['#00ffff', '#ff69b4', '#f1c40f', '#9b59b6'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        for (let i = 0; i < 15; i++) {
+            setTimeout(() => {
+                const el = document.createElement('div');
+                el.textContent = ['⏳', '⏰', '🕰️', '✨', '⭐'][Math.floor(Math.random() * 5)];
+                el.style.cssText = `
+                    position: fixed;
+                    font-size: ${20 + Math.random() * 30}px;
+                    left: ${Math.random() * 100}%;
+                    top: 100%;
+                    pointer-events: none;
+                    z-index: 9999;
+                    animation: floatUpTime 3s ease-out forwards;
+                `;
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 3000);
+            }, i * 80);
+        }
+
+        if (!document.getElementById('time-anim-style')) {
+            const style = document.createElement('style');
+            style.id = 'time-anim-style';
+            style.textContent = `
+                @keyframes floatUpTime {
+                    0% { opacity: 1; transform: translateY(0) scale(1); }
+                    100% { opacity: 0; transform: translateY(-100vh) scale(2); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    function createStarEffect() {
+        for (let i = 0; i < 30; i++) {
+            setTimeout(() => {
+                const el = document.createElement('div');
+                el.textContent = '🌟';
+                el.style.cssText = `
+                    position: fixed;
+                    font-size: ${20 + Math.random() * 20}px;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 100}%;
+                    pointer-events: none;
+                    z-index: 9999;
+                    animation: starFlash 2s ease-out forwards;
+                `;
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 2000);
+            }, i * 50);
+        }
+
+        if (!document.getElementById('star-anim-style')) {
+            const style = document.createElement('style');
+            style.id = 'star-anim-style';
+            style.textContent = `
+                @keyframes starFlash {
+                    0% { opacity: 0; transform: scale(0); }
+                    50% { opacity: 1; transform: scale(1.5); }
+                    100% { opacity: 0; transform: scale(0); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    // === ЛОГ ===
+    function addLog(text, type) {
+        const div = document.createElement('div');
+        div.className = 'log-entry ' + (type || '');
+        div.textContent = text;
+        logEl.appendChild(div);
+        logEl.scrollTop = logEl.scrollHeight;
+
+        while (logEl.children.length > 30) {
+            logEl.removeChild(logEl.firstChild);
+        }
+    }
+
+    // === СТАРТ ===
+    renderCapsules();
+    renderStars();
+</script>
+
+</body>
+</html>
